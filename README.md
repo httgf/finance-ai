@@ -91,13 +91,22 @@ docker run --rm -p 8000:8000 finance-ai
 API поднимется на `http://localhost:8000`. В репозитории есть unit-файл `finance-ai.service` для systemd, если нужно
 держать compose-сервис в проде.
 
-### Подключение фронтенда
+### Вариант 3. Деплой через systemd + Docker Compose
 
-- CORS открыт для `http://localhost:3000` и `https://*.csb.app` (CodeSandbox). Другие origin при необходимости добавьте в
-  `main.py`.
-- Базовый URL API: `http://<host>:8000` (эндпоинты `/health`, `/classify`, `/insights`, `/forecast`).
-- Для CodeSandbox укажите этот URL в фронтенд-конфигурации (например, `.env` вида `VITE_API_URL=https://your-host:8000`).
+Если репозиторий расположен по пути `/home/devops/finance-ai`, unit-файл уже содержит правильные пути для Docker Compose.
 
+```bash
+# из корня репозитория
+sudo cp finance-ai.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now finance-ai.service
+
+# проверка, что контейнер поднялся и отвечает
+curl http://localhost:8000/health
+```
+
+Если проект находится в другом каталоге, обновите `WorkingDirectory` и пути в `ExecStart`/`ExecStop` в `finance-ai.service`
+перед копированием.
 
 ### 3) Пример запросов к API
 
