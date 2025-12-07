@@ -1,9 +1,9 @@
 from typing import Dict, List, Optional
 from datetime import date
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from ml.forecast import generate_forecast
 from ml.insights_engine import generate_insights_and_recommendations
@@ -11,7 +11,10 @@ from ml.smart_predict_v3 import smart_predict_transaction
 
 app = FastAPI(title="Personal Finance AI Backend")
 
-origins = ["http://localhost:3000"]
+origins = [
+    "http://localhost:3000",
+    "https://financeai.app",
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,6 +60,14 @@ class InsightsRequest(BaseModel):
     current_balance: float
     avg_daily_expense: float
 
+    @field_validator("monthly_budget", "avg_daily_expense")
+    @classmethod
+    def validate_non_negative(cls, value: float, info: ValidationInfo):
+        if value < 0:
+            raise ValueError(f"{info.field_name} must be non-negative")
+        return value
+
+
 
 class TopCategory(BaseModel):
     category: str
@@ -88,6 +99,16 @@ class ForecastItem(BaseModel):
 class ForecastResponse(BaseModel):
     forecast: List[ForecastItem]
 
+class ForecastRequest(BaseModel):
+    days: int = 7
+
+    @field_validator("days")
+    @classmethod
+    def validate_days(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("days must be positive")
+        return value
+
 
 @app.post("/classify", response_model=ClassifyResponse)
 def classify_transaction(req: ClassifyRequest):
@@ -115,6 +136,11 @@ def get_insights(req: InsightsRequest):
 
 
 @app.post("/forecast", response_model=ForecastResponse)
-def forecast_balance():
-    forecast = [ForecastItem(**item) for item in generate_forecast()]
+def forecast_balance(req: ForecastRequest):
+    try:
+        forecast_data = generate_forecast(req.days)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="forecast model not found")
+
+    forecast = [ForecastItem(**item) for item in forecast_data]
     return ForecastResponse(forecast=forecast)
