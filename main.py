@@ -1,12 +1,16 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Dict, List, Optional
 from datetime import date
 
 from ml.smart_predict_v3 import smart_predict_transaction
 from ml.insights_engine import generate_insights_and_recommendations
 
 app = FastAPI(title="Personal Finance AI Backend")
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 class Transaction(BaseModel):
     date: date
@@ -34,6 +38,17 @@ class InsightsRequest(BaseModel):
     current_balance: float
     avg_daily_expense: float
 
+class InsightsResponse(BaseModel):
+    monthly_expense: float
+    monthly_budget: float
+    budget_left: float
+    budget_status: str
+    recommended_cushion: float
+    cushion_percent: int
+    cushion_status: str
+    categories: Dict[str, float]
+    recommendations: List[str]
+
 @app.post("/classify", response_model=ClassifyResponse)
 def classify_transaction(req: ClassifyRequest):
     res = smart_predict_transaction(req.ref, req.withdraw, req.deposit)
@@ -46,7 +61,7 @@ def classify_transaction(req: ClassifyRequest):
         "needs_user_review": res["needs_user_review"],
     })
 
-@app.post("/insights")
+@app.post("/insights", response_model=InsightsResponse)
 def get_insights(req: InsightsRequest):
     tx = [t.dict() for t in req.transactions]
     result = generate_insights_and_recommendations(
@@ -55,4 +70,4 @@ def get_insights(req: InsightsRequest):
         current_balance=req.current_balance,
         avg_daily_expense=req.avg_daily_expense,
     )
-    return resultы
+    return result
