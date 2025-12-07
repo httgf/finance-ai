@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  backend:
+    build: .
+    container_name: finance-ai-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./backend_models:/app/backend_models
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
