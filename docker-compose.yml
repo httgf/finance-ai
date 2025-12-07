@@ -1,13 +1,7 @@
-version: "3.8"
-
+cat docker-compose.yml
 services:
   backend:
     build: .
-    container_name: finance-ai-backend
-    restart: unless-stopped
+    container_name: finance-backend
     ports:
-      - "8000:8000"
-    volumes:
-      - ./data:/app/data
-      - ./backend_models:/app/backend_models
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+      - "80:8000"   # снаружи 80, внутри 8000
