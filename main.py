@@ -7,8 +7,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from ml.smart_predict_v3 import smart_predict_transaction
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, ValidationInfo, field_validator
+
+from ml.forecast import generate_forecast
 from ml.insights_engine import generate_insights_and_recommendations
+from ml.smart_predict_v3 import smart_predict_transaction
 
 # === FastAPI-приложение ===
 
